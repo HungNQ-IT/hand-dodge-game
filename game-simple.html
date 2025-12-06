@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Dodge Game - Simple Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+        }
+
+        #gameCanvas {
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: block;
+            background: #1a1a2e;
+            cursor: none;
+        }
+
+        #videoElement {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            transform: scaleX(-1);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-bottom: 15px;
+        }
+
+        .instructions {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #score {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #lives {
+            position: absolute;
+            top: 70px;
+            left: 30px;
+            color: #ff6b6b;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .gesture-indicator {
+            position: absolute;
+            top: 30px;
+            right: 200px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <video id="videoElement" autoplay playsinline></video>
+        
+        <div id="score">Score: 0</div>
+        <div id="lives">❤️ Lives: 3</div>
+        <div class="gesture-indicator" id="gestureIndicator">🖱️ Di chuyển chuột</div>
+
+        <div id="startScreen">
+            <h1>🎮 Hand Dodge Game</h1>
+            <h2>Phiên bản đơn giản (Chuột)</h2>
+            <div class="instructions">
+                <strong>Cách chơi:</strong>
+                <ul>
+                    <li>🖱️ <strong>Di chuyển chuột</strong> - Điều khiển nhân vật</li>
+                    <li>🖱️ <strong>Click chuột</strong> - Kích hoạt khiên (3 giây)</li>
+                    <li>🎯 <strong>Né chướng ngại vật</strong> màu đỏ</li>
+                    <li>⭐ <strong>Ăn vật phẩm</strong> màu vàng (+100 điểm)</li>
+                    <li>❤️ Bạn có 3 mạng - Chúc may mắn!</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666; font-style: italic;">
+                    💡 Phiên bản này dùng chuột thay vì camera để test game.<br>
+                    Nếu muốn dùng hand-tracking, mở index.html
+                </p>
+            </div>
+            <button onclick="startGame()">Bắt đầu chơi</button>
+        </div>
+
+        <div id="gameOverScreen" class="hidden">
+            <h1>Game Over!</h1>
+            <h2 id="finalScore"></h2>
+            <button onclick="restartGame()">Chơi lại</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const video = document.getElementById('videoElement');
+        video.style.display = 'none'; // Hide video in simple version
+
+        let gameState = 'start';
+        let score = 0;
+        let lives = 3;
+        let gameSpeed = 2;
+        let frameCount = 0;
+
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let shieldActive = false;
+        let shieldCooldown = 0;
+
+        let obstacles = [];
+        let powerups = [];
+        let particles = [];
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 25,
+            color: '#4ecdc4',
+            trail: []
+        };
+
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        // Shield activation
+        canvas.addEventListener('click', () => {
+            if (gameState === 'playing' && !shieldActive && shieldCooldown === 0) {
+                shieldActive = true;
+                shieldCooldown = 180;
+                setTimeout(() => {
+                    shieldActive = false;
+                }, 3000);
+            }
+        });
+
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            gameState = 'playing';
+            score = 0;
+            lives = 3;
+            gameSpeed = 2;
+            frameCount = 0;
+            obstacles = [];
+            powerups = [];
+            particles = [];
+            gameLoop();
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            startGame();
+        }
+
+        function gameLoop() {
+            if (gameState !== 'playing') return;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            frameCount++;
+
+            // Update player
+            player.x += (mouseX - player.x) * 0.2;
+            player.y += (mouseY - player.y) * 0.2;
+            player.trail.push({ x: player.x, y: player.y, alpha: 1 });
+            if (player.trail.length > 10) player.trail.shift();
+            player.trail.forEach(t => t.alpha -= 0.1);
+
+            if (shieldCooldown > 0) shieldCooldown--;
+
+            // Update indicator
+            const indicator = document.getElementById('gestureIndicator');
+            if (shieldActive) {
+                indicator.textContent = '🛡️ Shield Active!';
+                indicator.style.background = 'rgba(52, 152, 219, 0.9)';
+            } else if (shieldCooldown > 0) {
+                indicator.textContent = `⏳ Cooldown: ${Math.ceil(shieldCooldown / 60)}s`;
+                indicator.style.background = 'rgba(231, 76, 60, 0.9)';
+            } else {
+                indicator.textContent = '🖱️ Click = Shield';
+                indicator.style.background = 'rgba(76, 209, 55, 0.9)';
+            }
+
+            // Spawn obstacles
+            if (frameCount % 60 === 0) {
+                obstacles.push({
+                    x: canvas.width + 30,
+                    y: Math.random() * (canvas.height - 60) + 30,
+                    radius: 20 + Math.random() * 10,
+                    speed: gameSpeed + Math.random() * 2,
+                    color: '#e74c3c'
+                });
+            }
+
+            // Spawn powerups
+            if (frameCount % 180 === 0) {
+                powerups.push({
+                    x: canvas.width + 30,
+                    y: Math.random() * (canvas.height - 60) + 30,
+                    radius: 15,
+                    speed: gameSpeed,
+                    color: '#f39c12'
+                });
+            }
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= obs.speed;
+
+                if (obs.x < -50) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    continue;
+                }
+
+                const dist = Math.hypot(player.x - obs.x, player.y - obs.y);
+                if (dist < player.radius + obs.radius) {
+                    if (shieldActive) {
+                        obstacles.splice(i, 1);
+                        createExplosion(obs.x, obs.y, '#3498db');
+                        score += 50;
+                    } else {
+                        obstacles.splice(i, 1);
+                        lives--;
+                        createExplosion(player.x, player.y, '#e74c3c');
+                        if (lives <= 0) gameOver();
+                    }
+                }
+            }
+
+            // Update powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const pow = powerups[i];
+                pow.x -= pow.speed;
+
+                if (pow.x < -50) {
+                    powerups.splice(i, 1);
+                    continue;
+                }
+
+                const dist = Math.hypot(player.x - pow.x, player.y - pow.y);
+                if (dist < player.radius + pow.radius) {
+                    powerups.splice(i, 1);
+                    score += 100;
+                    createExplosion(pow.x, pow.y, '#f39c12');
+                }
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            if (frameCount % 600 === 0) gameSpeed += 0.5;
+
+            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('lives').textContent = `❤️ Lives: ${lives}`;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Particles
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+
+            // Trail
+            player.trail.forEach(t => {
+                ctx.fillStyle = player.color;
+                ctx.globalAlpha = t.alpha * 0.3;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, player.radius * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Player
+            const gradient = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2);
+            gradient.addColorStop(0, 'rgba(78, 205, 196, 0.3)');
+            gradient.addColorStop(1, 'rgba(78, 205, 196, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(player.x - player.radius * 2, player.y - player.radius * 2, player.radius * 4, player.radius * 4);
+
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(player.x - 8, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.arc(player.x + 8, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (shieldActive) {
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 15, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Obstacles
+            obstacles.forEach(obs => {
+                const gradient = ctx.createRadialGradient(obs.x, obs.y, 0, obs.x, obs.y, obs.radius * 1.5);
+                gradient.addColorStop(0, 'rgba(231, 76, 60, 0.5)');
+                gradient.addColorStop(1, 'rgba(231, 76, 60, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(obs.x - obs.radius * 1.5, obs.y - obs.radius * 1.5, obs.radius * 3, obs.radius * 3);
+
+                ctx.fillStyle = obs.color;
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#c0392b';
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x, obs.y);
+                    ctx.lineTo(obs.x + Math.cos(angle) * obs.radius, obs.y + Math.sin(angle) * obs.radius);
+                    ctx.lineTo(obs.x + Math.cos(angle + 0.4) * obs.radius, obs.y + Math.sin(angle + 0.4) * obs.radius);
+                    ctx.fill();
+                }
+            });
+
+            // Powerups
+            powerups.forEach(pow => {
+                const gradient = ctx.createRadialGradient(pow.x, pow.y, 0, pow.x, pow.y, pow.radius * 2);
+                gradient.addColorStop(0, 'rgba(243, 156, 18, 0.5)');
+                gradient.addColorStop(1, 'rgba(243, 156, 18, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(pow.x - pow.radius * 2, pow.y - pow.radius * 2, pow.radius * 4, pow.radius * 4);
+
+                ctx.fillStyle = pow.color;
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+                    const x = pow.x + Math.cos(angle) * pow.radius;
+                    const y = pow.y + Math.sin(angle) * pow.radius;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+
+                    const innerAngle = angle + Math.PI / 5;
+                    const innerX = pow.x + Math.cos(innerAngle) * (pow.radius * 0.5);
+                    const innerY = pow.y + Math.sin(innerAngle) * (pow.radius * 0.5);
+                    ctx.lineTo(innerX, innerY);
+                }
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    size: Math.random() * 4 + 2,
+                    alpha: 1,
+                    color: color
+                });
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            document.getElementById('finalScore').textContent = `Điểm của bạn: ${score}`;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

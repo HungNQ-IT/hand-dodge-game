@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Dodge Game - Chọn chế độ chơi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+
+        .game-modes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .game-desc {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .game-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .badge-recommended {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .badge-simple {
+            background: #95e1d3;
+            color: #333;
+        }
+
+        .features {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .features h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-icon {
+            font-size: 1.5em;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Hand Dodge Game</h1>
+        <p class="subtitle">Trò chơi điều khiển bằng Computer Vision</p>
+
+        <div class="game-modes">
+            <a href="game-hand.html" class="game-card">
+                <div class="game-icon">✋</div>
+                <div class="game-title">Hand Tracking</div>
+                <div class="game-desc">
+                    Điều khiển bằng bàn tay qua camera. Sử dụng AI để nhận diện cử chỉ realtime.
+                </div>
+                <span class="game-badge badge-recommended">🔥 Khuyến nghị</span>
+            </a>
+
+            <a href="game-simple.html" class="game-card">
+                <div class="game-icon">🖱️</div>
+                <div class="game-title">Mouse Control</div>
+                <div class="game-desc">
+                    Điều khiển bằng chuột. Phù hợp cho thiết bị không có camera hoặc muốn chơi nhanh.
+                </div>
+                <span class="game-badge badge-simple">⚡ Nhanh gọn</span>
+            </a>
+        </div>
+
+        <div class="features">
+            <h2>✨ Tính năng</h2>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="feature-icon">🤖</span>
+                    <span>AI Hand Detection</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <span>Gameplay đơn giản</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🛡️</span>
+                    <span>Hệ thống Shield</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⭐</span>
+                    <span>Power-ups</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <span>Điểm số & Lives</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎨</span>
+                    <span>Hiệu ứng đẹp mắt</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🎮 Được tạo bởi Kiro AI Assistant</p>
+            <p>Công nghệ: MediaPipe Hands, HTML5 Canvas, JavaScript</p>
+        </footer>
+    </div>
+</body>
+</html>
